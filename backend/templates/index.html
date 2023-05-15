@@ -1,0 +1,84 @@
+import React from 'react';
+import { BrowserRouter as Router, Route } from 'react-router-dom';
+import axios from 'axios';
+import { Button, List, ListItem } from '@material-ui/core';
+
+function QuizApp() {
+  return (
+    <Router>
+      <Route path="/" exact component={QuizList} />
+      <Route path="/quiz/:id" component={Quiz} />
+      <Route path="/results" component={Results} />
+    </Router>
+  );
+}
+
+function QuizList() {
+  const [quizzes, setQuizzes] = React.useState([]);
+
+  React.useEffect(() => {
+    axios.get('/api/quizzes').then((response) => {
+      setQuizzes(response.data);
+    });
+  }, []);
+
+  return (
+    <List>
+      {quizzes.map((quiz) => (
+        <ListItem key={quiz.id}>
+          <Button href={`/quiz/${quiz.id}`}>{quiz.title}</Button>
+        </ListItem>
+      ))}
+    </List>
+  );
+}
+
+function Quiz({ match }) {
+  const [quiz, setQuiz] = React.useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
+  const [score, setScore] = React.useState(0);
+
+  React.useEffect(() => {
+    axios.get(`/api/quizzes/${match.params.id}`).then((response) => {
+      setQuiz(response.data);
+    });
+  }, [match.params.id]);
+
+  if (!quiz) {
+    return null;
+  }
+
+  const currentQuestion = quiz.questions[currentQuestionIndex];
+
+  const handleSubmitAnswer = (choice) => {
+    if (choice.is_correct) {
+      setScore((score) => score + 1);
+    }
+
+    if (currentQuestionIndex + 1 < quiz.questions.length) {
+      setCurrentQuestionIndex((index) => index + 1);
+    } else {
+      // TODO: Redirect to results page
+    }
+  };
+
+  return (
+    <>
+      <h2>{currentQuestion.text}</h2>
+      <List>
+        {currentQuestion.choices.map((choice) => (
+          <ListItem key={choice.id}>
+            <Button onClick={() => handleSubmitAnswer(choice)}>
+              {choice.text}
+            </Button>
+          </ListItem>
+        ))}
+      </List>
+    </>
+  );
+}
+
+function Results() {
+  // TODO: Implement results page
+  return null;
+}
